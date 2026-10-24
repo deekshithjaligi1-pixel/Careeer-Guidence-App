@@ -1,6 +1,15 @@
 import { useState } from "react";
-import { Play, Send, CheckCircle2, XCircle, AlertCircle, Loader2, ExternalLink, Code2, Terminal } from "lucide-react";
-import { executeCode, type CodeExecutionResult } from "@/lib/dsa-compiler.server";
+import { Play, Send, CheckCircle2, XCircle, Loader2, ExternalLink, Code2, Terminal, Eye, RotateCcw } from "lucide-react";
+import {
+  runChallenge,
+  starterTemplate,
+  isPythonLoaded,
+  warmUpPython,
+  RUNNABLE_LANGUAGES,
+  type CodeExecutionResult,
+  type RunnableLanguage,
+} from "@/lib/code-runner";
+import { CodeEditor } from "@/components/CodeEditor";
 import { toast } from "sonner";
 import type { CodingChallenge } from "@/lib/dsa-curriculum";
 
@@ -21,35 +30,39 @@ export function CodingWorkspace({
   savedCode,
   isAlreadyCompleted,
 }: CodingWorkspaceProps) {
-  const [language, setLanguage] = useState<"javascript" | "typescript" | "python" | "java" | "cpp">("javascript");
-  const [code, setCode] = useState<string>(
-    savedCode || challenge.starterCode[language] || challenge.starterCode.javascript
-  );
+  const [language, setLanguage] = useState<RunnableLanguage>("javascript");
+  const template = (lang: RunnableLanguage) =>
+    starterTemplate(lang, challenge.starterCode[lang] || challenge.starterCode.javascript);
+  const [code, setCode] = useState<string>(savedCode || template("javascript"));
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"problem" | "testcases" | "output">("problem");
   const [execResult, setExecResult] = useState<CodeExecutionResult | null>(null);
 
-  const handleLanguageChange = (newLang: "javascript" | "typescript" | "python" | "java" | "cpp") => {
+  const handleLanguageChange = (newLang: RunnableLanguage) => {
     setLanguage(newLang);
-    if (!savedCode) {
-      setCode(challenge.starterCode[newLang] || challenge.starterCode.javascript);
+    if (newLang === "python") warmUpPython();
+    setCode(template(newLang));
+    setExecResult(null);
+  };
+
+  const showSolution = () => {
+    if (!confirm("Replace your code with the reference solution?")) return;
+    setCode(challenge.starterCode[language] || challenge.starterCode.javascript);
+  };
+
+  const run = (mode: "run" | "submit") => {
+    if (language === "python" && !isPythonLoaded()) {
+      toast.info("Loading Python for the first time — this takes a few seconds.");
     }
+    return runChallenge({ topicId, levelId, language, code, mode });
   };
 
   const handleRunCode = async () => {
     setIsRunning(true);
     setActiveTab("output");
     try {
-      const result = await executeCode({
-        data: {
-          topicId,
-          levelId,
-          language,
-          code,
-          mode: "run",
-        },
-      });
+      const result = await run("run");
       setExecResult(result);
       if (result.status === "accepted") {
         toast.success("Sample test cases passed!");
@@ -67,15 +80,7 @@ export function CodingWorkspace({
     setIsSubmitting(true);
     setActiveTab("output");
     try {
-      const result = await executeCode({
-        data: {
-          topicId,
-          levelId,
-          language,
-          code,
-          mode: "submit",
-        },
-      });
+      const result = await run("submit");
       setExecResult(result);
       if (result.status === "accepted") {
         toast.success("All test cases passed! Challenge completed.");
@@ -122,17 +127,17 @@ export function CodingWorkspace({
         </div>
 
         {/* Language selector & actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={language}
-            onChange={(e) => handleLanguageChange(e.target.value as any)}
+            onChange={(e) => handleLanguageChange(e.target.value as RunnableLanguage)}
             className="rounded-lg bg-surface border border-border/70 px-3 py-1.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
           >
-            <option value="javascript">JavaScript (Node.js)</option>
-            <option value="typescript">TypeScript</option>
-            <option value="python">Python 3</option>
-            <option value="java">Java 17</option>
-            <option value="cpp">C++ 20</option>
+            {RUNNABLE_LANGUAGES.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.label}
+              </option>
+            ))}
           </select>
 
           <button
@@ -298,7 +303,7 @@ export function CodingWorkspace({
                         )}
                         <div>
                           <div className="font-bold uppercase tracking-wider text-xs">
-                            {execResult.status.replace("_", " ")}
+                            {execResult.status.replaceAll("_", " ")}
                           </div>
                           <div className="text-[11px] opacity-90">
                             Passed {execResult.passedCount} of {execResult.totalCount} test cases
@@ -348,19 +353,26 @@ export function CodingWorkspace({
 
         {/* Right pane: Code Editor */}
         <div className="lg:col-span-7 flex flex-col bg-[#0b0f19]">
-          <div className="flex items-center justify-between px-4 py-2 bg-surface/50 border-b border-border/60 text-[11px] font-mono text-muted-foreground">
-            <span>Editor ({language})</span>
-            <span>UTF-8</span>
+          <div className="flex items-center justify-between gap-2 px-4 py-2 bg-surface/50 border-b border-border/60 text-[11px] text-muted-foreground">
+            <span className="font-mono">solution.{language === "python" ? "py" : language === "typescript" ? "ts" : "js"}</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCode(template(language))}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-surface-2 hover:text-foreground transition cursor-pointer"
+              >
+                <RotateCcw className="h-3 w-3" /> Reset
+              </button>
+              <button
+                onClick={showSolution}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-surface-2 hover:text-foreground transition cursor-pointer"
+              >
+                <Eye className="h-3 w-3" /> Show solution
+              </button>
+            </div>
           </div>
 
-          <div className="flex-1 p-3">
-            <textarea
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              spellCheck={false}
-              className="w-full h-full min-h-[440px] bg-transparent text-emerald-300 font-mono text-xs leading-relaxed focus:outline-none resize-none p-2"
-              placeholder="// Write your solution here..."
-            />
+          <div className="flex-1">
+            <CodeEditor value={code} onChange={setCode} />
           </div>
         </div>
       </div>

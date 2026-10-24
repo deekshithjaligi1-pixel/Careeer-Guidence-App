@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import {
   FileText,
   ScanSearch,
@@ -8,13 +7,9 @@ import {
   ArrowRight,
   UserPlus,
   LogIn,
-  Award,
-  Clock,
-  TrendingUp,
-  CheckCircle2,
   BookOpen,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { HomeProgress } from "@/components/HomeProgress";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -59,81 +54,6 @@ const features = [
 ] as const;
 
 function Index() {
-  const [user, setUser] = useState<any>(null);
-  const [stats, setStats] = useState<{
-    assessmentsCount: number;
-    latestScore: number | null;
-    interviewsCount: number;
-    latestInterviewScore: number | null;
-    hasResume: boolean;
-    recentAssessments: any[];
-    recentInterviews: any[];
-  }>({
-    assessmentsCount: 0,
-    latestScore: null,
-    interviewsCount: 0,
-    latestInterviewScore: null,
-    hasResume: false,
-    recentAssessments: [],
-    recentInterviews: [],
-  });
-
-  useEffect(() => {
-    async function loadUserData() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const currentUser = sessionData?.session?.user;
-      setUser(currentUser ?? null);
-
-      if (currentUser) {
-        // Fetch real data from Supabase
-        const [assessRes, interviewRes, resumeRes] = await Promise.all([
-          supabase
-            .from("skill_assessments")
-            .select("*")
-            .eq("user_id", currentUser.id)
-            .order("completed_at", { ascending: false }),
-          supabase
-            .from("mock_interviews")
-            .select("*")
-            .eq("user_id", currentUser.id)
-            .order("completed_at", { ascending: false }),
-          supabase
-            .from("resumes")
-            .select("id")
-            .eq("user_id", currentUser.id)
-            .limit(1),
-        ]);
-
-        const assessments = assessRes.data || [];
-        const interviews = interviewRes.data || [];
-        const resumes = resumeRes.data || [];
-
-        setStats({
-          assessmentsCount: assessments.length,
-          latestScore: assessments.length > 0 ? Number(assessments[0].score) : null,
-          interviewsCount: interviews.length,
-          latestInterviewScore: interviews.length > 0 ? Number(interviews[0].score) : null,
-          hasResume: resumes.length > 0,
-          recentAssessments: assessments.slice(0, 3),
-          recentInterviews: interviews.slice(0, 3),
-        });
-      }
-    }
-
-    void loadUserData();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        void loadUserData();
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background layers */}
@@ -290,116 +210,8 @@ function Index() {
         </div>
       </section>
 
-      {/* STUDENT DASHBOARD OVERVIEW (Real Supabase Data) */}
-      {user && (
-        <section className="mx-auto max-w-7xl px-4 md:px-8 pb-16">
-          <div className="rounded-3xl glass p-6 md:p-8 border border-primary/30 shadow-glow relative overflow-hidden">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-border/60">
-              <div>
-                <span className="text-xs uppercase tracking-widest text-primary font-semibold">
-                  Personal Dashboard
-                </span>
-                <h3 className="text-2xl font-bold tracking-tight mt-1">
-                  Welcome back, {user.user_metadata?.full_name || user.email?.split("@")[0]}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Real-time activity and assessment progress synced with your profile
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Link
-                  to="/dashboard"
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-primary-foreground shadow-glow"
-                  style={{ background: "var(--gradient-gold)" }}
-                >
-                  Full Dashboard
-                </Link>
-                <Link
-                  to="/skill-assessment"
-                  className="rounded-xl glass px-4 py-2 text-xs font-medium text-foreground hover:border-primary/50"
-                >
-                  New Assessment
-                </Link>
-                <Link
-                  to="/mock-interview"
-                  className="rounded-xl glass px-4 py-2 text-xs font-medium text-foreground hover:border-primary/50"
-                >
-                  Practice Interview
-                </Link>
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-              <div className="rounded-2xl border border-border/60 bg-surface/50 p-4">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Skill Assessments</span>
-                  <BrainCircuit className="h-4 w-4 text-primary" />
-                </div>
-                <div className="mt-2 text-2xl font-bold">{stats.assessmentsCount}</div>
-                <div className="text-[11px] text-muted-foreground mt-1">
-                  {stats.latestScore !== null ? `Latest score: ${stats.latestScore}%` : "No tests completed yet"}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-surface/50 p-4">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Mock Interviews</span>
-                  <MessagesSquare className="h-4 w-4 text-primary" />
-                </div>
-                <div className="mt-2 text-2xl font-bold">{stats.interviewsCount}</div>
-                <div className="text-[11px] text-muted-foreground mt-1">
-                  {stats.latestInterviewScore !== null ? `Readiness: ${stats.latestInterviewScore}%` : "No sessions yet"}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-surface/50 p-4">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Resume Status</span>
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div className="mt-2 text-2xl font-bold">
-                  {stats.hasResume ? "Active" : "Draft"}
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-1">
-                  {stats.hasResume ? "Synced to database" : "Create your resume"}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-surface/50 p-4">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-medium">Career Readiness</span>
-                  <Award className="h-4 w-4 text-primary" />
-                </div>
-                <div className="mt-2 text-2xl font-bold text-gradient-gold">
-                  {stats.latestScore ? `${Math.round((stats.latestScore + (stats.latestInterviewScore || 70)) / 2)}%` : "Pending"}
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-1">
-                  Composite rating
-                </div>
-              </div>
-            </div>
-
-            {stats.recentAssessments.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-border/60">
-                <h4 className="text-sm font-semibold mb-3">Recent Assessments</h4>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  {stats.recentAssessments.map((a) => (
-                    <div key={a.id} className="rounded-xl border border-border/60 bg-surface/30 p-3 text-xs">
-                      <div className="flex items-center justify-between font-semibold">
-                        <span>{a.technology}</span>
-                        <span className="text-primary font-bold">{a.score}%</span>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mt-1 capitalize">
-                        {a.difficulty} difficulty · {new Date(a.completed_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
+      {/* Signed-in users see their own progress here */}
+      <HomeProgress />
 
       <section id="features" className="mx-auto max-w-7xl px-4 md:px-8 pb-32">
         <div className="max-w-2xl">

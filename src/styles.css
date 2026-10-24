@@ -157,6 +157,30 @@
     border-color: var(--color-border);
   }
 
+  /* Dark native controls and scrollbars everywhere (no white scroll tracks). */
+  html {
+    color-scheme: dark;
+    scrollbar-color: oklch(0.4 0.04 265) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.4 0.04 265 / 70%);
+    border-radius: 99px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  /* Show code exactly as typed: no "<=" → "≤" style ligatures. */
+  .font-mono, code, pre, kbd, samp {
+    font-variant-ligatures: none;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

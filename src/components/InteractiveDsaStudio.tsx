@@ -13,7 +13,15 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
-import { executeCode, type CodeExecutionResult } from "@/lib/dsa-compiler.server";
+import {
+  runChallenge,
+  isPythonLoaded,
+  warmUpPython,
+  RUNNABLE_LANGUAGES,
+  type CodeExecutionResult,
+  type RunnableLanguage,
+} from "@/lib/code-runner";
+import { CodeEditor } from "@/components/CodeEditor";
 
 interface PresetProblem {
   id: string;
@@ -242,7 +250,7 @@ public:
   },
 ];
 
-type SupportedLang = "javascript" | "typescript" | "python" | "java" | "cpp";
+type SupportedLang = RunnableLanguage;
 
 export function InteractiveDsaStudio() {
   const [selectedProblemId, setSelectedProblemId] = useState<string>(PRESET_PROBLEMS[0].id);
@@ -265,6 +273,7 @@ export function InteractiveDsaStudio() {
 
   const handleLanguageChange = (newLang: SupportedLang) => {
     setLanguage(newLang);
+    if (newLang === "python") warmUpPython();
     setCode(problem.starterCodes[newLang]);
     setExecResult(null);
   };
@@ -278,14 +287,15 @@ export function InteractiveDsaStudio() {
     setIsRunning(true);
     setActiveTab("output");
     try {
-      const result = await executeCode({
-        data: {
-          topicId: problem.topicId,
-          levelId: problem.levelId,
-          language,
-          code,
-          mode: "run",
-        },
+      if (language === "python" && !isPythonLoaded()) {
+        toast.info("Loading Python for the first time — this takes a few seconds.");
+      }
+      const result = await runChallenge({
+        topicId: problem.topicId,
+        levelId: problem.levelId,
+        language,
+        code,
+        mode: "run",
       });
       setExecResult(result);
       if (result.status === "accepted") {
@@ -304,14 +314,15 @@ export function InteractiveDsaStudio() {
     setIsSubmitting(true);
     setActiveTab("output");
     try {
-      const result = await executeCode({
-        data: {
-          topicId: problem.topicId,
-          levelId: problem.levelId,
-          language,
-          code,
-          mode: "submit",
-        },
+      if (language === "python" && !isPythonLoaded()) {
+        toast.info("Loading Python for the first time — this takes a few seconds.");
+      }
+      const result = await runChallenge({
+        topicId: problem.topicId,
+        levelId: problem.levelId,
+        language,
+        code,
+        mode: "submit",
       });
       setExecResult(result);
       if (result.status === "accepted") {
@@ -353,17 +364,17 @@ export function InteractiveDsaStudio() {
         </div>
 
         {/* Language selector & Run buttons */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <select
             value={language}
             onChange={(e) => handleLanguageChange(e.target.value as SupportedLang)}
             className="rounded-lg bg-surface border border-border/70 px-3 py-1.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
           >
-            <option value="javascript">JavaScript (Node.js)</option>
-            <option value="typescript">TypeScript</option>
-            <option value="python">Python 3</option>
-            <option value="java">Java 17</option>
-            <option value="cpp">C++ 20</option>
+            {RUNNABLE_LANGUAGES.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.label}
+              </option>
+            ))}
           </select>
 
           <button
@@ -498,7 +509,7 @@ export function InteractiveDsaStudio() {
                         )}
                         <div>
                           <div className="font-bold uppercase tracking-wider text-xs">
-                            {execResult.status.replace("_", " ")}
+                            {execResult.status.replaceAll("_", " ")}
                           </div>
                           <div className="text-[11px] opacity-90">
                             Passed {execResult.passedCount} of {execResult.totalCount} test cases
@@ -548,14 +559,8 @@ export function InteractiveDsaStudio() {
             <span>Tab: 2 spaces</span>
           </div>
 
-          <div className="flex-1 p-3">
-            <textarea
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              spellCheck={false}
-              className="w-full h-full min-h-[460px] bg-transparent text-emerald-300 font-mono text-xs leading-relaxed focus:outline-none resize-none p-2"
-              placeholder="// Write your code here..."
-            />
+          <div className="flex-1">
+            <CodeEditor value={code} onChange={setCode} minHeight={460} />
           </div>
         </div>
       </div>

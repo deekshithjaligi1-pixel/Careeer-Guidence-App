@@ -91,6 +91,10 @@ export function ResumePreview({
 }) {
   const s = templateStyles[template];
   const { personal: p } = data;
+  const isEmpty =
+    !p.fullName && !p.title && !data.summary &&
+    data.education.length + data.skills.length + data.projects.length +
+      data.experience.length + data.certifications.length === 0;
   return (
     <div
       id="resume-print-area"
@@ -109,6 +113,22 @@ export function ResumePreview({
           {p.website && <span className="inline-flex items-center gap-1"><Globe className="h-3 w-3" />{p.website}</span>}
         </div>
       </header>
+
+      {isEmpty && (
+        <div className="mt-6 space-y-6 print:hidden" aria-hidden>
+          <p className="text-center text-[12px] text-slate-400">
+            Start filling in your details — your resume builds here as you type.
+          </p>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-2.5 w-28 rounded bg-slate-200" />
+              <div className="h-2 w-full rounded bg-slate-100" />
+              <div className="h-2 w-11/12 rounded bg-slate-100" />
+              <div className="h-2 w-4/5 rounded bg-slate-100" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {data.summary && (
         <section className="mt-4">

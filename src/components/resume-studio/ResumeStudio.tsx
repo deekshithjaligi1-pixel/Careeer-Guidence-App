@@ -266,9 +266,9 @@ export default function ResumeStudio() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[45%_55%] gap-6 print:block">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] print:block">
           {/* LEFT — editor */}
-          <div className="print:hidden">
+          <div className="min-w-0 print:hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
@@ -276,7 +276,7 @@ export default function ResumeStudio() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="rounded-2xl glass p-6 shadow-card"
+                className="rounded-2xl glass p-5 shadow-card sm:p-6"
               >
                 {step === 0 && <PersonalStep data={data} onChange={setPersonal} />}
                 {step === 1 && (
@@ -339,10 +339,10 @@ export default function ResumeStudio() {
           </div>
 
           {/* RIGHT — preview */}
-          <div className="lg:sticky lg:top-24 self-start print:static">
+          <div className="min-w-0 lg:sticky lg:top-24 self-start print:static">
             <div className="rounded-2xl glass p-3 mb-4 print:hidden">
               <p className="text-[10px] font-semibold tracking-[0.14em] uppercase text-muted-foreground px-2 pb-2">Templates</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {TEMPLATES.map((t) => (
                   <button
                     key={t.key}
@@ -353,8 +353,8 @@ export default function ResumeStudio() {
                         : "border-border/60 hover:border-border bg-surface/50"
                     }`}
                   >
-                    <p className="text-xs font-semibold">{t.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{t.hint}</p>
+                    <p className="truncate text-xs font-semibold">{t.name}</p>
+                    <p className="truncate text-[10px] text-muted-foreground">{t.hint}</p>
                   </button>
                 ))}
               </div>
@@ -436,17 +436,15 @@ function Field({
   label, value, onChange, type = "text", placeholder,
 }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
   return (
-    <label className="relative block group">
+    <label className="block min-w-0">
+      <span className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</span>
       <input
         type={type}
         value={value}
-        placeholder={placeholder || " "}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="peer w-full rounded-xl bg-surface/60 border border-border/60 px-3.5 pt-5 pb-1.5 text-sm text-foreground placeholder-transparent focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition"
+        className="h-11 w-full rounded-xl border border-border/60 bg-surface/60 px-3.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/70 focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
       />
-      <span className="pointer-events-none absolute left-3.5 top-1.5 text-[10px] font-semibold tracking-[0.14em] uppercase text-muted-foreground peer-focus:text-primary">
-        {label}
-      </span>
     </label>
   );
 }
@@ -455,14 +453,14 @@ function TextArea({
   label, value, onChange, rows = 4, placeholder,
 }: { label: string; value: string; onChange: (v: string) => void; rows?: number; placeholder?: string }) {
   return (
-    <label className="relative block">
-      <span className="block text-[10px] font-semibold tracking-[0.14em] uppercase text-muted-foreground mb-1.5">{label}</span>
+    <label className="block min-w-0">
+      <span className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</span>
       <textarea
         rows={rows}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl bg-surface/60 border border-border/60 p-3 text-sm resize-y focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition"
+        className="w-full rounded-xl bg-surface/60 border border-border/60 p-3 text-sm resize-y placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition"
       />
     </label>
   );
@@ -476,14 +474,14 @@ function PersonalStep({
     <>
       <StepHeader icon={User} title="Personal Information" hint="Recruiters see this at the top of your resume." />
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Full Name" value={p.fullName} onChange={(v) => onChange("fullName", v)} />
+        <Field label="Full Name" value={p.fullName} onChange={(v) => onChange("fullName", v)} placeholder="e.g. Priya Sharma" />
         <Field label="Professional Title" value={p.title} onChange={(v) => onChange("title", v)} placeholder="e.g. Full-Stack Developer" />
-        <Field label="Email" value={p.email} onChange={(v) => onChange("email", v)} type="email" />
-        <Field label="Phone" value={p.phone} onChange={(v) => onChange("phone", v)} />
-        <Field label="Location" value={p.location} onChange={(v) => onChange("location", v)} />
-        <Field label="LinkedIn" value={p.linkedin} onChange={(v) => onChange("linkedin", v)} />
-        <Field label="GitHub" value={p.github} onChange={(v) => onChange("github", v)} />
-        <Field label="Portfolio Website" value={p.website} onChange={(v) => onChange("website", v)} />
+        <Field label="Email" value={p.email} onChange={(v) => onChange("email", v)} type="email" placeholder="you@example.com" />
+        <Field label="Phone" value={p.phone} onChange={(v) => onChange("phone", v)} type="tel" placeholder="+91 98765 43210" />
+        <Field label="Location" value={p.location} onChange={(v) => onChange("location", v)} placeholder="Hyderabad, India" />
+        <Field label="LinkedIn" value={p.linkedin} onChange={(v) => onChange("linkedin", v)} placeholder="linkedin.com/in/username" />
+        <Field label="GitHub" value={p.github} onChange={(v) => onChange("github", v)} placeholder="github.com/username" />
+        <Field label="Portfolio Website" value={p.website} onChange={(v) => onChange("website", v)} placeholder="yourname.dev" />
       </div>
     </>
   );
