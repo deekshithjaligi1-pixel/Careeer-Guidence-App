@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Menu, X, User, LogOut, Sparkles } from "lucide-react";
+import { Menu, X, LogOut, Sparkles, LayoutDashboard, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthModal } from "./AuthModal";
+import { useAuthUser } from "@/hooks/useAuthUser";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +26,7 @@ const links = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const { user, isAdmin } = useAuthUser();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
 
@@ -34,21 +35,6 @@ export function Navbar() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    // Listen to Supabase auth state changes
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
@@ -128,8 +114,24 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 glass border-border/70 p-1.5">
                   <DropdownMenuLabel className="font-normal text-xs text-muted-foreground">
-                    Signed in as <strong className="text-foreground block truncate">{user.email}</strong>
+                    Signed in as{" "}
+                    <strong className="text-foreground block truncate">{user.email}</strong>
                   </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer gap-2">
+                    <Link to="/dashboard">
+                      <LayoutDashboard className="h-4 w-4" />
+                      My Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild className="cursor-pointer gap-2">
+                      <Link to="/admin">
+                        <Shield className="h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleSignOut}
@@ -186,16 +188,36 @@ export function Navbar() {
 
               <div className="mt-4 pt-4 border-t border-border/60 flex flex-col gap-2">
                 {user ? (
-                  <button
-                    onClick={() => {
-                      setOpen(false);
-                      handleSignOut();
-                    }}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl glass py-2.5 text-sm text-destructive"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign Out ({user.email})
-                  </button>
+                  <>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setOpen(false)}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl glass py-2.5 text-sm text-foreground"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      My Dashboard
+                    </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setOpen(false)}
+                        className="w-full flex items-center justify-center gap-2 rounded-xl glass py-2.5 text-sm text-foreground"
+                      >
+                        <Shield className="h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        handleSignOut();
+                      }}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl glass py-2.5 text-sm text-destructive"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out ({user.email})
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button
@@ -225,11 +247,7 @@ export function Navbar() {
         )}
       </header>
 
-      <AuthModal
-        open={authModalOpen}
-        onOpenChange={setAuthModalOpen}
-        defaultMode={authMode}
-      />
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} defaultMode={authMode} />
     </>
   );
 }

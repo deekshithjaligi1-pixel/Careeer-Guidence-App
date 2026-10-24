@@ -308,9 +308,15 @@ function Index() {
               </div>
               <div className="flex gap-2">
                 <Link
-                  to="/skill-assessment"
+                  to="/dashboard"
                   className="rounded-xl px-4 py-2 text-xs font-semibold text-primary-foreground shadow-glow"
                   style={{ background: "var(--gradient-gold)" }}
+                >
+                  Full Dashboard
+                </Link>
+                <Link
+                  to="/skill-assessment"
+                  className="rounded-xl glass px-4 py-2 text-xs font-medium text-foreground hover:border-primary/50"
                 >
                   New Assessment
                 </Link>

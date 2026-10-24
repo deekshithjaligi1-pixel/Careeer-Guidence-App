@@ -32,7 +32,10 @@ export const Route = createFileRoute("/resume-review")({
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
+      },
     ],
   }),
   component: ResumeReviewPage,
@@ -65,7 +68,16 @@ function ResumeReviewPage() {
   const running = useRef(false);
 
   useEffect(() => {
-    setHistory(loadReviews());
+    // Fires once on load (INITIAL_SESSION) and again on sign-in/out.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        // Defer: supabase calls inside this callback can deadlock the client.
+        setTimeout(() => void loadReviews().then(setHistory), 0);
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const hasJd = Boolean(state.jdFile) || state.jdText.trim().length > 40;
@@ -132,23 +144,8 @@ function ResumeReviewPage() {
 
       setStageIndex(stages.length);
       setResult(res.review);
-      setHistory(saveReview(res.review));
       setPhase("report");
-
-      // Save to Supabase if authenticated
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const user = sessionData?.session?.user;
-        if (user) {
-          await supabase.from("resumes").insert({
-            user_id: user.id,
-            resume_data: { fileName: state.resume.name, rawText: resumeRes.text.slice(0, 10000) },
-            review_result: res.review,
-          });
-        }
-      } catch (dbErr) {
-        console.warn("Failed to persist resume review to Supabase:", dbErr);
-      }
+      void saveReview(res.review).then(setHistory);
     } catch {
       setError("Something went wrong while reviewing this resume. Please try again.");
       setPhase("upload");
@@ -160,82 +157,88 @@ function ResumeReviewPage() {
   return (
     <main className="resume-review-theme min-h-[calc(100vh-5rem)] px-4 py-10 sm:px-6 sm:py-14">
       <div className="mx-auto w-full max-w-6xl">
-      {phase === "upload" ? (
-        <>
-          <header className="mb-8 animate-fade-in sm:mb-10">
-            <p className="resume-kicker">Career document analysis</p>
-            <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Resume Review</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Get clear, actionable feedback on your resume.
-            </p>
-          </header>
+        {phase === "upload" ? (
+          <>
+            <header className="mb-8 animate-fade-in sm:mb-10">
+              <p className="resume-kicker">Career document analysis</p>
+              <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Resume Review</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Get clear, actionable feedback on your resume.
+              </p>
+            </header>
 
-          <div className={history.length ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]" : ""}>
-            <UploadStep state={state} setState={setState} onStart={() => void start()} error={error} />
+            <div className={history.length ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]" : ""}>
+              <UploadStep
+                state={state}
+                setState={setState}
+                onStart={() => void start()}
+                error={error}
+              />
 
-            {history.length ? (
-            <section className="resume-history h-fit p-5 sm:p-6">
-              <div className="flex items-center gap-2">
-                <Clock3 className="h-4 w-4 text-primary" />
-                <h2 className="text-base font-semibold">Recent reviews</h2>
-              </div>
-              <ul className="mt-4 space-y-2">
-                {history.map((r) => (
-                  <li
-                    key={r.id}
-                    className="resume-history-row grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3"
-                  >
-                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <button
-                      type="button"
-                      className="min-w-0 text-left"
-                      onClick={() => {
-                        setResult(r);
-                        setPhase("report");
-                      }}
-                    >
-                      <span className="block truncate text-sm font-medium">
-                        {r.candidate.name ?? r.resumeFileName}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-muted-foreground">
-                        {new Date(r.createdAt).toLocaleDateString()} · Score {r.overallScore}/100
-                      </span>
-                    </button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Delete review"
-                      onClick={() => setHistory(deleteReview(r.id))}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            ) : null}
-          </div>
-        </>
-      ) : null}
+              {history.length ? (
+                <section className="resume-history h-fit p-5 sm:p-6">
+                  <div className="flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 text-primary" />
+                    <h2 className="text-base font-semibold">Recent reviews</h2>
+                  </div>
+                  <ul className="mt-4 space-y-2">
+                    {history.map((r) => (
+                      <li
+                        key={r.id}
+                        className="resume-history-row grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3"
+                      >
+                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <button
+                          type="button"
+                          className="min-w-0 text-left"
+                          onClick={() => {
+                            setResult(r);
+                            setPhase("report");
+                          }}
+                        >
+                          <span className="block truncate text-sm font-medium">
+                            {r.candidate.name ?? r.resumeFileName}
+                          </span>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {new Date(r.createdAt).toLocaleDateString()} · Score {r.overallScore}
+                            /100
+                          </span>
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Delete review"
+                          onClick={() => void deleteReview(r.id).then(setHistory)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </div>
+          </>
+        ) : null}
 
-      {phase === "scanning" ? <ScanningStep stages={stages} activeIndex={stageIndex} /> : null}
+        {phase === "scanning" ? <ScanningStep stages={stages} activeIndex={stageIndex} /> : null}
 
-      {phase === "report" && result ? (
-        <ReportView
-          review={result}
-          onNewReview={() => {
-            setResult(null);
-            setState({ resume: null, jdFile: null, jdText: "" });
-            setPhase("upload");
-          }}
-        />
-      ) : null}
+        {phase === "report" && result ? (
+          <ReportView
+            review={result}
+            onNewReview={() => {
+              setResult(null);
+              setState({ resume: null, jdFile: null, jdText: "" });
+              setPhase("upload");
+            }}
+          />
+        ) : null}
 
-      {phase === "report" && !result ? (
-        <p className="flex items-center gap-2 text-sm text-red-400">
-          <AlertCircle className="h-4 w-4" /> This review is no longer available.
-        </p>
-      ) : null}
+        {phase === "report" && !result ? (
+          <p className="flex items-center gap-2 text-sm text-red-400">
+            <AlertCircle className="h-4 w-4" /> This review is no longer available.
+          </p>
+        ) : null}
       </div>
     </main>
   );

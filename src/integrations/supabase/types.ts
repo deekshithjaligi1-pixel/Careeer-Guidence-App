@@ -14,6 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
+      dsa_level_progress: {
+        Row: {
+          coding_completed: boolean
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          last_code: string | null
+          level_id: string
+          quiz_completed: boolean
+          quiz_passed: boolean
+          quiz_score: number
+          topic_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          coding_completed?: boolean
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_code?: string | null
+          level_id: string
+          quiz_completed?: boolean
+          quiz_passed?: boolean
+          quiz_score?: number
+          topic_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          coding_completed?: boolean
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_code?: string | null
+          level_id?: string
+          quiz_completed?: boolean
+          quiz_passed?: boolean
+          quiz_score?: number
+          topic_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dsa_quiz_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          level_id: string
+          passed: boolean
+          score: number
+          topic_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level_id: string
+          passed: boolean
+          score: number
+          topic_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level_id?: string
+          passed?: boolean
+          score?: number
+          topic_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dsa_solved_problems: {
+        Row: {
+          problem_id: string
+          solved_at: string
+          user_id: string
+        }
+        Insert: {
+          problem_id: string
+          solved_at?: string
+          user_id: string
+        }
+        Update: {
+          problem_id?: string
+          solved_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      resume_reviews: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          id: string
+          overall_score: number | null
+          review: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          overall_score?: number | null
+          review: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          overall_score?: number | null
+          review?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assessment_results: {
         Row: {
           assessment_id: string | null
@@ -224,7 +365,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_list_users: {
+        Args: never
+        Returns: {
+          assessments: number
+          avg_assessment_score: number | null
+          avg_interview_score: number | null
+          best_ats_score: number | null
+          dsa_levels_completed: number
+          education: string | null
+          email: string | null
+          email_verified: boolean
+          full_name: string | null
+          has_resume: boolean
+          interviews: number
+          is_admin: boolean
+          joined_at: string
+          last_active_at: string | null
+          last_sign_in_at: string | null
+          problems_solved: number
+          resume_reviews: number
+          user_id: string
+        }[]
+      }
+      admin_overview: { Args: never; Returns: Json }
+      admin_user_detail: { Args: { target: string }; Returns: Json }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

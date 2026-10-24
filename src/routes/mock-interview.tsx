@@ -224,7 +224,7 @@ function SetupView({ onStart }: { onStart: (cfg: InterviewConfig) => void }) {
       <div className="grid lg:grid-cols-[1.1fr_.9fr] gap-12 items-center">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full glass px-3 py-1 text-xs text-muted-foreground">
-            <Sparkles className="h-3 w-3 text-primary" /> Powered by Gemini · Lovable AI
+            <Sparkles className="h-3 w-3 text-primary" /> Powered by Gemini AI
           </span>
           <h1 className="mt-5 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
             AI Interview <span className="text-gradient-lime">Simulator</span>
