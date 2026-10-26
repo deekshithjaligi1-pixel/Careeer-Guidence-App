@@ -34,7 +34,7 @@ const GenInput = z.object({
 });
 
 export const generateAssessment = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => GenInput.parse(d))
+  .validator((d: unknown) => GenInput.parse(d))
   .handler(async ({ data }) => {
     const modeHint =
       data.mode === "mcq"
@@ -99,7 +99,7 @@ const EvalInput = z.object({
 });
 
 export const evaluateAssessment = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => EvalInput.parse(d))
+  .validator((d: unknown) => EvalInput.parse(d))
   .handler(async ({ data }) => {
     // Auto-grade objective, LLM grades scenarios + produces report
     const items = data.answers.map((a) => {

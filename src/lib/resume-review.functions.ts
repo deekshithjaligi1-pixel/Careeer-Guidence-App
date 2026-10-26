@@ -76,7 +76,7 @@ const ExtractInput = z.object({
 });
 
 export const extractDocumentText = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => ExtractInput.parse(d))
+  .validator((d: unknown) => ExtractInput.parse(d))
   .handler(async ({ data }): Promise<{ ok: true; text: string } | { ok: false; error: string }> => {
     const lower = data.fileName.toLowerCase();
     try {
@@ -204,7 +204,7 @@ ${
 }
 
 export const reviewResume = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => ReviewInput.parse(d))
+  .validator((d: unknown) => ReviewInput.parse(d))
   .handler(
     async ({ data }): Promise<{ ok: true; review: ResumeReview } | { ok: false; error: string }> => {
       const jobText = data.jobText?.trim() ? data.jobText.trim().slice(0, 12000) : null;

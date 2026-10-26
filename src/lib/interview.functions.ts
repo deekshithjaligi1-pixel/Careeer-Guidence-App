@@ -75,7 +75,7 @@ function cleanQuestions(raw: unknown): string[] {
 
 /** Always returns a non-empty list of exactly cfg.totalQuestions questions. */
 export const generateQuestions = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => ConfigSchema.parse(d))
+  .validator((d: unknown) => ConfigSchema.parse(d))
   .handler(async ({ data }) => {
     const total = Math.max(1, data.totalQuestions || 5);
     const skills =
@@ -149,7 +149,7 @@ export type AnswerFeedback = {
 };
 
 export const evaluateAnswer = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => EvalInput.parse(d))
+  .validator((d: unknown) => EvalInput.parse(d))
   .handler(async ({ data }): Promise<AnswerFeedback> => {
     const isLast = data.questionIndex + 1 >= data.config.totalQuestions;
     const skipped =
@@ -249,7 +249,7 @@ function offlineReport(data: z.infer<typeof ReportInput>): InterviewReport {
 }
 
 export const generateReport = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => ReportInput.parse(d))
+  .validator((d: unknown) => ReportInput.parse(d))
   .handler(async ({ data }): Promise<InterviewReport> => {
     const model = getModel();
     if (!model) return offlineReport(data);

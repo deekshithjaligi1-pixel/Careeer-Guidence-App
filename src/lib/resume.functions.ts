@@ -33,7 +33,7 @@ const ImproveTextInput = z.object({
 });
 
 export const improveText = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => ImproveTextInput.parse(d))
+  .validator((d: unknown) => ImproveTextInput.parse(d))
   .handler(async ({ data }) => {
     const kindHint: Record<string, string> = {
       summary:
@@ -87,12 +87,12 @@ Return JSON strictly in this format:
     if (data.kind === "project" || data.kind === "experience") {
       const parts = data.text
         .split(/[.\n]+/)
-        .map((p) => p.trim())
-        .filter((p) => p.length > 5);
+        .map((p: string) => p.trim())
+        .filter((p: string) => p.length > 5);
 
       const strongVerbs = ["Architected and engineered", "Designed and implemented", "Spearheaded development of", "Streamlined and optimized"];
       
-      const bullets = (parts.length > 0 ? parts : [data.text.trim()]).map((part, idx) => {
+      const bullets = (parts.length > 0 ? parts : [data.text.trim()]).map((part: string, idx: number) => {
         const verb = strongVerbs[idx % strongVerbs.length];
         const cleanPart = part.replace(/^[•\-*]\s*/, "").replace(/^(I|We)\s+(built|did|worked on|made)\s+/i, "");
         return `• ${verb} ${cleanPart}, enhancing maintainability and improving system efficiency by 25%.`;
@@ -113,7 +113,7 @@ const AnalyzeInput = z.object({
 });
 
 export const analyzeResume = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => AnalyzeInput.parse(d))
+  .validator((d: unknown) => AnalyzeInput.parse(d))
   .handler(async ({ data }) => {
     try {
       const model = getModel();
@@ -166,7 +166,7 @@ const LiveTipsInput = z.object({
 });
 
 export const liveTips = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => LiveTipsInput.parse(d))
+  .validator((d: unknown) => LiveTipsInput.parse(d))
   .handler(async ({ data }) => {
     try {
       const model = getModel();

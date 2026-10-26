@@ -15,13 +15,13 @@ export function getGeminiModel(modelName: string = "gemini-3.5-flash-lite") {
   const provider = createGoogleGenerativeAI({
     apiKey: apiKey.trim(),
   });
-  // Use gemini-3.5-flash-lite as the fast, highly available default
+  // Map deprecated or legacy model names to active Gemini models
   const resolvedModel =
     !modelName ||
     modelName === "gemini-2.5-flash" ||
     modelName === "gemini-2.5-flash-lite" ||
     modelName === "gemini-2.0-flash"
-      ? "gemini-3.5-flash-lite"
+      ? "gemini-3.8-flash"
       : modelName;
   return provider(resolvedModel);
 }
@@ -33,7 +33,7 @@ export async function generateWithGeminiFallback(options: {
   system?: string;
   prompt: string;
 }) {
-  const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash"];
+  const candidateModels = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.5-flash"];
   let lastError: any = null;
 
   for (const modelName of candidateModels) {
